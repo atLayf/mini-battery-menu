@@ -20,6 +20,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Without this the system picks a name ("Item-0") and the dragged
         // position is persisted against an index rather than something stable.
         statusItem.autosaveName = "MiniBatteryMenu"
+
+        // Command drag the item off the bar to remove it. The status item is
+        // the whole app, so an invisible running copy would be a bug rather
+        // than a state: quit instead, and reopening puts it back. Removal
+        // persists visible = NO against the autosave name, so undo that here,
+        // which is the re-add path the API asks applications to provide.
+        statusItem.behavior = .terminationOnRemoval
+        statusItem.isVisible = true
+
         statusItem.menu = NSMenu()
         statusItem.menu?.delegate = self
         statusItem.button?.addSubview(view)
