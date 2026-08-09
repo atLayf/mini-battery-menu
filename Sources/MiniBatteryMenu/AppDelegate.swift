@@ -17,16 +17,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        // Without this the system picks a name ("Item-0") and the dragged
-        // position is persisted against an index rather than something stable.
-        statusItem.autosaveName = "MiniBatteryMenu"
+        // NOTE: deliberately NOT setting autosaveName. The SDK header
+        // recommends it, but it rebinds the saved visibility AND the saved
+        // position to a fresh key, and in the sibling app that left the item
+        // with nowhere it could be placed: the app ran with nothing in the
+        // menu bar. The generated name already has a working saved position.
 
-        // Command drag the item off the bar to remove it. The status item is
-        // the whole app, so an invisible running copy would be a bug rather
-        // than a state: quit instead, and reopening puts it back. Removal
-        // persists visible = NO against the autosave name, so undo that here,
-        // which is the re-add path the API asks applications to provide.
-        statusItem.behavior = .terminationOnRemoval
+        // DELIBERATELY NOT removable, and this was measured rather than
+        // assumed. NSStatusItemBehaviorRemovalAllowed does not merely let the
+        // user drag the item off: it grants the system permission to remove
+        // it, and on a menu bar with no free room macOS takes that permission
+        // within a couple of seconds of launch. TerminationOnRemoval is worse,
+        // because the same system removal quits the app mid launch.
+        //
+        // To remove it, quit the app from its menu.
         statusItem.isVisible = true
 
         statusItem.menu = NSMenu()
@@ -85,6 +89,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func quit() { NSApp.terminate(nil) }
+
+    /// Opening the app again is the way back if the item has been dragged off
+    /// the menu bar. Without this, removal would leave a running copy with no
+    /// icon, no window and no way to reach it.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        statusItem?.isVisible = true
+        return true
+    }
 }
 
 // MARK: - Menu

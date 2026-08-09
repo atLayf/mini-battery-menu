@@ -34,10 +34,12 @@ the only width there is to give back. On a full menu bar, macOS silently drops
 whichever items do not fit, so a few points can be the difference between
 seeing an item and not.
 
-Hold command and drag the item off the menu bar to remove it. Because the status
-item is the whole interface, removing it quits the app rather than leaving an
-invisible copy running with no way to reach it. Open Mini Battery Menu again to
-put it back.
+To remove the item, quit the app from its menu.
+
+Command dragging it off the bar is deliberately not enabled. That needs
+`NSStatusItemBehaviorRemovalAllowed`, which does not merely permit the user to
+remove the item, it permits the *system* to, and on a menu bar with no free
+room macOS takes that permission within seconds of launch.
 
 ## Hiding the built in one
 

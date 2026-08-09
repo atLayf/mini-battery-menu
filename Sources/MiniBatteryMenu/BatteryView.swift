@@ -9,7 +9,7 @@ final class BatteryView: NSView {
     var compact: Bool = false { didSet { needsDisplay = true } }
     var isHighlighted: Bool = false { didSet { needsDisplay = true } }
 
-    private var sidePadding: CGFloat { compact ? 2 : 6 }
+    private var sidePadding: CGFloat { compact ? 1 : 3 }
     private var glyphGap: CGFloat { compact ? 2 : 3 }
 
     private let font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
