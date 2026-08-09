@@ -7,12 +7,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var timer: Timer?
     private var runLoopSource: CFRunLoopSource?
+    private let view = BatteryView()
+
+    private let compactKey = "minibattery.compact"
+    private var compact: Bool {
+        get { UserDefaults.standard.bool(forKey: compactKey) }
+        set { UserDefaults.standard.set(newValue, forKey: compactKey); refresh() }
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem.button?.imagePosition = .imageLeading
         statusItem.menu = NSMenu()
         statusItem.menu?.delegate = self
+        statusItem.button?.addSubview(view)
+        view.autoresizingMask = [.width, .height]
 
         refresh()
 
@@ -39,49 +47,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var info: BatteryInfo?
 
     private func refresh() {
-        guard let button = statusItem.button else { return }
-        let info = Battery.read()
-        self.info = info
+        info = Battery.read()
+        view.info = info
+        view.compact = compact
 
-        guard let info else {
-            button.image = nil
-            button.attributedTitle = NSAttributedString(string: "--", attributes: [
-                .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular),
-                .foregroundColor: NSColor.secondaryLabelColor,
-            ])
-            return
-        }
-
-        button.image = chargeGlyph(for: info)
-        button.attributedTitle = NSAttributedString(string: "\(info.percent)%", attributes: [
-            .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular),
-            .foregroundColor: color(for: info),
-        ])
+        let width = view.fittingWidth()
+        statusItem.length = width
+        view.frame = NSRect(x: 0, y: 0, width: width, height: NSStatusBar.system.thickness)
     }
 
-    /// Filled bolt while charging, hollow while plugged in but held (optimised
-    /// charging pauses short of full), nothing on battery.
-    private func chargeGlyph(for info: BatteryInfo) -> NSImage? {
-        let name: String
-        if info.isCharging {
-            name = "bolt.fill"
-        } else if info.isPlugged {
-            name = "bolt"
-        } else {
-            return nil
-        }
-        let config = NSImage.SymbolConfiguration(pointSize: 9.5, weight: .bold)
-        let image = NSImage(systemSymbolName: name, accessibilityDescription: "Charging")?
-            .withSymbolConfiguration(config)
-        image?.isTemplate = true
-        return image
-    }
-
-    private func color(for info: BatteryInfo) -> NSColor {
-        if info.isCritical { return .systemRed }
-        if info.isLow { return .systemOrange }
-        return .labelColor
-    }
+    @objc private func toggleCompact() { compact.toggle() }
 
     // MARK: - Login item
 
@@ -147,6 +122,13 @@ extension AppDelegate: NSMenuDelegate {
     }
 
     private func addFooter(to menu: NSMenu) {
+        let compactItem = NSMenuItem(title: "Compact Spacing", action: #selector(toggleCompact),
+                                     keyEquivalent: "")
+        compactItem.target = self
+        compactItem.state = compact ? .on : .off
+        compactItem.toolTip = "Tightens the padding inside this item. The gap between menu bar items is set by macOS and cannot be changed."
+        menu.addItem(compactItem)
+
         let login = NSMenuItem(title: "Open at Login", action: #selector(toggleLoginItem), keyEquivalent: "")
         login.target = self
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off

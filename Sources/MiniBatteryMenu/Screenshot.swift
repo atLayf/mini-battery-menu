@@ -6,28 +6,28 @@ import AppKit
 ///     "Mini Battery Menu.app/Contents/MacOS/MiniBatteryMenu" --render-shot docs/menubar.png
 enum Screenshot {
 
-    private struct Sample {
-        let percent: Int
-        let charging: Bool
-        let plugged: Bool
-    }
-
     private static let samples = [
-        Sample(percent: 76, charging: true, plugged: true),
-        Sample(percent: 45, charging: false, plugged: false),
-        Sample(percent: 12, charging: false, plugged: false),
+        BatteryInfo(percent: 76, isCharging: true, isPlugged: true),
+        BatteryInfo(percent: 45, isCharging: false, isPlugged: false),
+        BatteryInfo(percent: 12, isCharging: false, isPlugged: false),
     ]
 
-    private static let font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
     private static let sampleGap: CGFloat = 30
-    private static let glyphGap: CGFloat = 3
+
+    /// The real view, so the README image cannot drift from what the menu bar
+    /// actually draws.
+    private static func view(for info: BatteryInfo) -> BatteryView {
+        let view = BatteryView()
+        view.info = info
+        return view
+    }
 
     static func render(to path: String) {
         let barHeight: CGFloat = 22
         let padX: CGFloat = 18
         let padY: CGFloat = 13
 
-        let contentWidth = samples.reduce(CGFloat(0)) { $0 + width(of: $1) }
+        let contentWidth = samples.reduce(CGFloat(0)) { $0 + view(for: $1).fittingWidth() }
             + sampleGap * CGFloat(samples.count - 1)
         let size = NSSize(width: contentWidth + padX * 2, height: (barHeight + padY * 2) * 2)
 
@@ -51,8 +51,19 @@ enum Screenshot {
             appearance.performAsCurrentDrawingAppearance {
                 var x = padX
                 for sample in samples {
-                    draw(sample, at: x, centreY: bandY + bandHeight / 2)
-                    x += width(of: sample) + sampleGap
+                    let item = view(for: sample)
+                    item.appearance = appearance
+                    let width = item.fittingWidth()
+                    item.frame = NSRect(x: 0, y: 0, width: width, height: barHeight)
+
+                    NSGraphicsContext.saveGraphicsState()
+                    let transform = NSAffineTransform()
+                    transform.translateX(by: x, yBy: bandY + padY)
+                    transform.concat()
+                    item.draw(item.bounds)
+                    NSGraphicsContext.restoreGraphicsState()
+
+                    x += width + sampleGap
                 }
             }
         }
@@ -67,42 +78,8 @@ enum Screenshot {
         print("wrote \(path) (\(Int(size.width))x\(Int(size.height)))")
     }
 
-    private static func colour(for sample: Sample) -> NSColor {
-        if !sample.plugged, sample.percent <= 10 { return .systemRed }
-        if !sample.plugged, sample.percent <= 20 { return .systemOrange }
-        return .labelColor
-    }
 
-    private static func glyph(for sample: Sample) -> NSImage? {
-        guard sample.charging || sample.plugged else { return nil }
-        var config = NSImage.SymbolConfiguration(pointSize: 9.5, weight: .bold)
-        config = config.applying(NSImage.SymbolConfiguration(paletteColors: [colour(for: sample)]))
-        return NSImage(systemSymbolName: sample.charging ? "bolt.fill" : "bolt",
-                       accessibilityDescription: nil)?.withSymbolConfiguration(config)
-    }
 
-    private static func attributed(_ sample: Sample) -> NSAttributedString {
-        NSAttributedString(string: "\(sample.percent)%", attributes: [
-            .font: font,
-            .foregroundColor: colour(for: sample),
-        ])
-    }
 
-    private static func width(of sample: Sample) -> CGFloat {
-        var total = ceil(attributed(sample).size().width)
-        if let glyph = glyph(for: sample) { total += glyph.size.width + glyphGap }
-        return total
-    }
 
-    private static func draw(_ sample: Sample, at x: CGFloat, centreY: CGFloat) {
-        var cursor = x
-        if let glyph = glyph(for: sample) {
-            glyph.draw(in: NSRect(x: cursor, y: centreY - glyph.size.height / 2,
-                                  width: glyph.size.width, height: glyph.size.height))
-            cursor += glyph.size.width + glyphGap
-        }
-        let text = attributed(sample)
-        let size = text.size()
-        text.draw(at: NSPoint(x: cursor, y: centreY - size.height / 2))
-    }
 }

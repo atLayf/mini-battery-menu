@@ -6,14 +6,14 @@ struct BatteryInfo {
     var percent: Int
     var isCharging: Bool
     var isPlugged: Bool
-    var isCharged: Bool
+    var isCharged: Bool = false
     /// Minutes. nil when the system is still working it out.
-    var minutesToEmpty: Int?
-    var minutesToFull: Int?
-    var cycleCount: Int?
-    var condition: String?
+    var minutesToEmpty: Int? = nil
+    var minutesToFull: Int? = nil
+    var cycleCount: Int? = nil
+    var condition: String? = nil
     /// Maximum capacity as a percentage of the design capacity.
-    var health: Int?
+    var health: Int? = nil
 
     var isLow: Bool { !isPlugged && percent <= 20 }
     var isCritical: Bool { !isPlugged && percent <= 10 }

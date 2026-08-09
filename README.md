@@ -25,7 +25,14 @@ of the space.
   only when unplugged.
 
 Click it for time until full or empty, capacity against the original design
-capacity, cycle count and battery condition. Open at Login is in the same menu.
+capacity, cycle count and battery condition. Open at Login and Compact Spacing
+are in the same menu.
+
+**Compact Spacing** tightens the padding inside the item. macOS owns the gap
+*between* status items and no app can change that, so the padding within one is
+the only width there is to give back. On a full menu bar, macOS silently drops
+whichever items do not fit, so a few points can be the difference between
+seeing an item and not.
 
 ## Hiding the built in one
 
