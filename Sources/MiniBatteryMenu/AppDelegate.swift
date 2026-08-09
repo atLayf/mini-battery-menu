@@ -17,6 +17,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        // Without this the system picks a name ("Item-0") and the dragged
+        // position is persisted against an index rather than something stable.
+        statusItem.autosaveName = "MiniBatteryMenu"
         statusItem.menu = NSMenu()
         statusItem.menu?.delegate = self
         statusItem.button?.addSubview(view)
